@@ -1,0 +1,53 @@
+databases:
+  - name: cinesubz-db
+    plan: basic-256mb
+    databaseName: cinesubz
+    user: cinesubz_user
+
+services:
+  - type: web
+    name: cinesubz-dashboard
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cinesubz-db
+          property: connectionString
+      - key: DASHBOARD_PASSWORD
+        sync: false
+      - key: SITE_BASE_URL
+        value: https://cinesubz.net
+      - key: USER_AGENT
+        value: CineSubzMetadataResearchBot/1.0 (contact: replace-with-your-email@example.com)
+      - key: REQUEST_DELAY_SECONDS
+        value: "3"
+      - key: MAX_PAGES_PER_JOB
+        value: "3"
+      - key: MAX_DETAILS_PER_JOB
+        value: "10"
+
+  - type: worker
+    name: cinesubz-worker
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python worker.py
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cinesubz-db
+          property: connectionString
+      - key: SITE_BASE_URL
+        value: https://cinesubz.net
+      - key: USER_AGENT
+        value: CineSubzMetadataResearchBot/1.0 (contact: replace-with-your-email@example.com)
+      - key: REQUEST_DELAY_SECONDS
+        value: "3"
+      - key: MAX_PAGES_PER_JOB
+        value: "3"
+      - key: MAX_DETAILS_PER_JOB
+        value: "10"
